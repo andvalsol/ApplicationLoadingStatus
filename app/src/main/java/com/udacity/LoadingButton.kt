@@ -1,10 +1,13 @@
 package com.udacity
 
+import android.animation.AnimatorInflater
 import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.*
 import android.util.AttributeSet
+import android.util.Log
 import android.view.View
+import androidx.core.content.ContextCompat
 import kotlin.properties.Delegates
 
 
@@ -14,10 +17,22 @@ class LoadingButton @JvmOverloads constructor(
     private var widthSize = 0
     private var heightSize = 0
 
-    private val valueAnimator = ValueAnimator()
+    private var _backgroundColor: Int = Color.BLACK // By default use a black color
+    private var _textColor: Int = Color.BLACK // By default use a black color
+
+    private var valueAnimator: ValueAnimator
 
     private var buttonState: ButtonState by Delegates.observable(ButtonState.Completed) { p, old, new ->
 
+    }
+
+    private val updateListener = ValueAnimator.AnimatorUpdateListener {
+        progress = (it.animatedValue as Float).toDouble()
+
+        if (progress > 100.0) buttonState = ButtonState.Completed
+
+        invalidate()
+        requestLayout()
     }
 
     @Volatile
@@ -25,6 +40,28 @@ class LoadingButton @JvmOverloads constructor(
 
     init {
         isClickable = true
+
+        // Initialize the value animator
+        valueAnimator = AnimatorInflater.loadAnimator(
+            context, R.animator.loading_button
+        ) as ValueAnimator
+
+        valueAnimator.addUpdateListener(updateListener)
+
+        val attributes = context.theme.obtainStyledAttributes(attrs,
+            R.styleable.LoadingButton,
+            0,
+            0)
+
+        try {
+            _backgroundColor = attributes.getColor(R.styleable.LoadingButton_customBackgroundColor,
+                ContextCompat.getColor(context, R.color.colorPrimary))
+
+            _textColor = attributes.getColor(R.styleable.LoadingButton_customTextColor,
+            ContextCompat.getColor(context, R.color.colorPrimary))
+        } finally {
+            attributes.recycle()
+        }
     }
 
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -44,21 +81,7 @@ class LoadingButton @JvmOverloads constructor(
     }
 
     fun animateButton() {
-        Thread(Runnable {
-            var i = 0
-            while (i < 101) {
-
-                Thread.sleep(10)
-
-                this.invalidate()
-
-                progress = i.toDouble()
-
-                if (progress == 100.0) buttonState = ButtonState.Completed
-
-                i++
-            }
-        }).start()
+        valueAnimator.start()
     }
 
     private val rect = RectF(
@@ -71,7 +94,7 @@ class LoadingButton @JvmOverloads constructor(
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         paint.strokeWidth = 0f
-        paint.color = Color.DKGRAY
+        paint.color = _backgroundColor
         canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), paint)
 
         if (buttonState == ButtonState.Loading) {
@@ -91,7 +114,7 @@ class LoadingButton @JvmOverloads constructor(
                 resources.getString(R.string.loading)
             else resources.getString(R.string.download)
 
-        paint.color = Color.WHITE
+        paint.color = _textColor
         canvas.drawText(label, (width / 2).toFloat(), ((height + 30) / 2).toFloat(), paint)
     }
 
