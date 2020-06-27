@@ -5,9 +5,9 @@ import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.*
 import android.util.AttributeSet
-import android.util.Log
 import android.view.View
 import androidx.core.content.ContextCompat
+import kotlinx.android.synthetic.main.content_main.*
 import kotlin.properties.Delegates
 
 
@@ -23,14 +23,20 @@ class LoadingButton @JvmOverloads constructor(
     private var valueAnimator: ValueAnimator
 
     private var buttonState: ButtonState by Delegates.observable(ButtonState.Completed) { p, old, new ->
-
     }
 
     private val updateListener = ValueAnimator.AnimatorUpdateListener {
         progress = (it.animatedValue as Float).toDouble()
 
-        if (progress > 100.0) buttonState = ButtonState.Completed
+        invalidate()
+        requestLayout()
+    }
 
+    fun hasCompletedDownload() {
+        // cancel the animation
+        valueAnimator.cancel()
+
+        buttonState = ButtonState.Completed
         invalidate()
         requestLayout()
     }
@@ -73,22 +79,21 @@ class LoadingButton @JvmOverloads constructor(
 
     override fun performClick(): Boolean {
         super.performClick()
-
         if (buttonState == ButtonState.Completed) buttonState = ButtonState.Loading
-
+        animateButton()
 
         return true
     }
 
-    fun animateButton() {
+    private fun animateButton() {
         valueAnimator.start()
     }
 
     private val rect = RectF(
-        50f,
-        50f,
-        100f,
-        100f
+        10f,
+        10f,
+        60f,
+        60f
     )
 
     override fun onDraw(canvas: Canvas) {

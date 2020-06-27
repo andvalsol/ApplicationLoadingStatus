@@ -100,9 +100,7 @@ class MainActivity : AppCompatActivity() {
 
             if (downloadID == id) {
                 // The download has been completed
-                // Animate the custom button
-                custom_button.animateButton()
-
+                custom_button.hasCompletedDownload()
                 // Send the notification telling the user that the download has complete
                 sendNotification(downloadID.toInt())
             }
